@@ -43,23 +43,22 @@ data  = read.table("krat_pedigree_plus.csv", header=T, sep=",")
 kins  = read.table("allkins.csv", sep=",", header=TRUE)
 sub   = read.table("krat_pedinfo_years.csv", header=TRUE, sep=",")
 
-setwd("/Users/jannawilloughby/GDrive/Willoughby lab/kangaroo rat migration/")
-field = read.table("mound_locs/KRATP.csv", header=T, sep=",")
-data  = read.table("krat_pedigree_plus.csv", header=T, sep=",")
-kins  = read.table("mound_locs/allkins.csv", sep=",", header=TRUE)
-sub   = read.table("krat_pedinfo_years.csv", header=TRUE, sep=",")
+#adjust measurements to zero to 1200
+field$adjlat  = field$lat - min(field$lat, na.rm=TRUE)
+field$adjlong = field$long - min(field$long, na.rm=TRUE)
 
-"
-THIS FAILED but see below for something that worked!
-
-#find the migrants
-indvs = unique(sub$id)
-sub$freq = freq(sub$id) #failed
-
-library(data.table)
-setDT[, count := uniqueN(subpop), by = id]
-"
-
+#assign subpopulation 
+field$subpop = rep(0, nrow(field))
+field$subpop[field$adjlong<425] = "R2"
+field$subpop[field$adjlong<660 & field$adjlong>425] = "SSW"
+field$subpop[field$adjlong>660 & field$adjlat<690] = "R1W"
+field$subpop[field$adjlat>=690] = "R1E"
+plot(-100,-100, xlim=c(0,1200), ylim=c(0,1200))
+points(field$adjlat[field$subpop=="R2"],  field$adjlong[field$subpop=="R2"],  pch=19, col="darkorchid3")
+points(field$adjlat[field$subpop=="SSW"], field$adjlong[field$subpop=="SSW"], pch=19, col="chartreuse3")
+points(field$adjlat[field$subpop=="R1W"], field$adjlong[field$subpop=="R1W"], pch=19, col="dodgerblue3")
+points(field$adjlat[field$subpop=="R1E"], field$adjlong[field$subpop=="R1E"], pch=19, col="firebrick3")
+abline(v=c(700), h=c(425, 660))
 
 library(dplyr)
 sub2 <- sub %>%
@@ -87,52 +86,7 @@ sub2[sub2$id==1907,]
 sub2[sub2$id==4074,]
 sub2[sub2$id==4072,]
 
-" FAILED -- see below for attempt #2
-OUT = migrant = NULL #these are creating varilables and setting them to null. take the out variable and add to it at every iteration of the loop. rbind takes what is in out already, add with writeout, and rbind adds another rowm, cbind adds column. so sum and restart loop cuz at the end. null creates variables with nothing in it
-indvs = unique(sub2$id)
-for(i in 1:length(indvs)){ #iterate 1 to the length of the number of indv in the list
-  t = sub2[sub2$id==as.numeric(as.character(indvs[i])),,drop=F] #t is temperatry (convention). a subset of the datafram I am iterating over. so pull out all of rows in field data with thei [articular indiv caputered]. easier to have ind as numeric rather than character. the drop=F is critical. if you subset a datafra,e in R and teh result is just 1 row, R will conver to a list. if you add drop=FALSE, treate as a one row datafra,/one row matrix
-  if(length(t$subpop[t$moves==1])>0){ #looking within t, when offspring =1. if a baby at the time, 1 is yes. if adult, offpring=0. find any rows where temperatry t, where it was captured as offpring, and if it is there, save as "natal". and saving the name of teh territory there. if natal=0, not caputred at reproductive age.
-    migrant = as.character(t$subpop[t$moves==1])
-  }else(
-    migrant=0
-  )
-  yes = nrow(t[t$moves==1,,drop=F]) #find all rows when they were adults. therefore this is the number of captured as adult
-  nsubpops = length(unique(t$subpop[t$moves==1])) ##how many territories as an adult (offspring=0) and look at how many unique, what is the length. so how many mounds did the indv occupt as adult
-  writeout = c(indvs[i], migrant, nsubpops) #this is the info to put in new datafra,e. concatenated into a list and addd writeout to end of the out variable
-  OUT = rbind(OUT, writeout)
-}
-
-rownames(OUT) = seq(1,nrow(OUT),1) #change row names of out to consecutibe numbers in the sequence. if in huge matrix, more convenient as dataframe, so taking column and putting in name that is understandable later
-mounds = data.frame(id=as.numeric(as.character(OUT[,1])), natal=as.character(OUT[,2]), nadultmounds=as.numeric(as.character(OUT[,3])), nadultsubpops=as.numeric(as.character(OUT[,4])))
-
-table(mounds$nadultmounds)
-table(mounds$nadultsubpops)
-table(mounds$nadultmounds-mounds$nadultsubpops)"
-
-###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-##UPdate-- does NOT work.. out of bounds ---- THIS WORKS BUT THE COLUMNS ARE MESSED UP-- TRY CHANGING SO THAT IT WORKS
-OUT = nonmigrant = NULL #these are creating varilables and setting them to null. take the out variable and add to it at every iteration of the loop. rbind takes what is in out already, add with writeout, and rbind adds another rowm, cbind adds column. so sum and restart loop cuz at the end. null creates variables with nothing in it
-indvs = unique(sub2$id)
-for(i in 1:length(indvs)){ #iterate 1 to the length of the number of indv in the list
-  t = sub2[sub2$id==as.numeric(as.character(indvs[i])),,drop=F] #t is temperatry (convention). a subset of the datafram I am iterating over. so pull out all of rows in field data with thei [articular indiv caputered]. easier to have ind as numeric rather than character. the drop=F is critical. if you subset a datafra,e in R and teh result is just 1 row, R will conver to a list. if you add drop=FALSE, treate as a one row datafra,/one row matrix
-  if(length(t$terr[t$moves==1])>0){ #looking within t, when offspring =1. if a baby at the time, 1 is yes. if adult, offpring=0. find any rows where temperatry t, where it was captured as offpring, and if it is there, save as "natal". and saving the name of teh territory there. if natal=0, not caputred at reproductive age.
-    migrant = length(as.character(t$terr[t$moves==1]))
-  }else(
-    migrant=0
-  )
-  ncap = nrow(t[t$moves==0,,drop=F]) #find all rows when they were adults. therefore this is the number of captured as adult
-  nsubpop = length(unique(t$subpop[t$moves==0])) ##how many territories as an adult (offspring=0) and look at how many unique, what is the length. so how many mounds did the indv occupt as adult
-  writeout = c(indvs[i], nonmigrant, ncap, nsubpop) #this is the info to put in new datafra,e. concatenated into a list and addd writeout to end of the out variable
-  OUT = rbind(OUT, writeout)
-}
-rownames(OUT) = seq(1,nrow(OUT),1) #change row names of out to consecutibe numbers in the sequence. if in huge matrix, more convenient as dataframe, so taking column and putting in name that is understandable later
-MIG =    data.frame(id=as.numeric(as.character(OUT[,1])), migrant=as.character(OUT[,2]), nmig=as.numeric(as.character(OUT[,3])), nsubpops=as.numeric(as.character(OUT[,4])))
-NONMIG = data.frame(id=as.numeric(as.character(OUT[,1])), nonmigrant=as.character(OUT[,2]), ncap=as.numeric(as.character(OUT[,3])), nsubpop=as.numeric(as.character(OUT[,4])))
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#THIS IS WHAT IT SHOULD BE
 
 OUT = migrant = NULL #these are creating varilables and setting them to null. take the out variable and add to it at every iteration of the loop. rbind takes what is in out already, add with writeout, and rbind adds another rowm, cbind adds column. so sum and restart loop cuz at the end. null creates variables with nothing in it
 indvs = unique(sub2$id)
@@ -151,6 +105,10 @@ for(i in 1:length(indvs)){ #iterate 1 to the length of the number of indv in the
 rownames(OUT) = seq(1,nrow(OUT),1) #change row names of out to consecutibe numbers in the sequence. if in huge matrix, more convenient as dataframe, so taking column and putting in name that is understandable later
 MIG = data.frame(id=as.numeric(as.character(OUT[,1])), migrant=as.character(OUT[,2]), nmig=as.numeric(as.character(OUT[,3])), nsubpops=as.numeric(as.character(OUT[,4])))
 #"nmig" is the number of captures and "nsubpops" is correct, but only when moves=0. So all the migrants where moves > 0, nmig and nsubpops =0.
+
+table(MIG$nmig)
+table(MIG$nsubpops)
+table(MIG$migrant)
 
 #+~+~+~+~+~+~++~+~+~~+~+~+~+~+~+~+~++~+~+~+~+~+~+~++~+~+~++~+~+~+~+~+~++~+~+~+~+~+~++~
 #MIG is the dataframe with data only for migrants
@@ -181,7 +139,13 @@ for(i in 1:length(indvs)){ #iterate 1 to the length of the number of indv in the
   OUT = rbind(OUT, writeout)
 }
 rownames(OUT) = seq(1,nrow(OUT),1) #change row names of out to consecutibe numbers in the sequence. if in huge matrix, more convenient as dataframe, so taking column and putting in name that is understandable later
-MIG = data.frame(id=as.numeric(as.character(OUT[,1])), migrant=as.character(OUT[,2]), nyrs=as.numeric(as.character(OUT[,3])), nsubpops=as.numeric(as.character(OUT[,4])), ncap=as.numeric(as.character(OUT[,5])), ck=as.numeric(as.character(OUT[,6])))
+ALL = data.frame(id=as.numeric(as.character(OUT[,1])), migrant=as.character(OUT[,2]), nyrs=as.numeric(as.character(OUT[,3])), nsubpops=as.numeric(as.character(OUT[,4])), ncap=as.numeric(as.character(OUT[,5])), ck=as.numeric(as.character(OUT[,6])))
+
+table(ALL$nsubpops)
+table(ALL$migrant)
+table(ALL$ncap)
+table(ALL$ck)
+table(ALL$nyrs)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
 ##################################################################################3
 #just some messin around with the data
