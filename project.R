@@ -1,38 +1,22 @@
 #KRat pedigree/subpop data
 #Gina Lamka - Started Spring 2021
 
-"Main Question: How to migrants contribute to genetic diversity of subpopulations?"
+"Main Question: How do migrants contribute to genetic diversity of subpopulations?"
+
+"Background information
+  I have a 17 generation pedigree for banner-tailed kangaroo rats from southeast Arizona.
+  The population is subdivided into 4 distinct subpopulations distributed along a volcanic cinder cone.
+  I am interested in understanding how migrants affect the fitness and genetic diversity of these subpopulations"
+
 "First steps:
-  1. find who the migrants are and what populations they moved from > to
-  2. find out if the migrants added offspring to the new population
-    a. If they did not add offspring, they would be 'vacationers' and would not affect overall genetic diversity
-    b. If they did add offspring, Check these out! This is what we are interested in!
-    
-    J-proportionally, are there immmediate fitness costs of moving? what are the differences are
-    
-  3. identify if the migrants affected the genetic diversity of the subpopulation
-    a. compare offspring of migrants vs offpsring of non-migrants in the next generation J--YES
-    b. compare inbreeding estimates of the overall population before and after the moves J--YES --- can use F from pedigree or kinship
-    J-before the m ove, what is the averge kinship before and after the move
-    J affected by the size of the subpopulation in the move
-    J fig with population size over time- use this for rough idea of pop size at any given time
-    J looks like 50-75 except for one time with 10
-    c. compare longevity of migrants vs non-migrants
-      i. ideally, longevity = # of captures. 
-      ii. potential issue-- these are not precise birth/death rates, and longevity may be too similar to detect differences
-      J- weak but significant in inbreed and longevity in Heredity paper-- check supplementary
-  4. other comparisons to check out:
-    a. are all migrants of the same sex? and what is the sex ratio of the year they migrated and are the ratios different in first and second subpop?
-    b. about how far did migrants travel?
-      i. do this by looking at territories. this may or may not be simple to do- idk
-      J - coorediantes are in meters and lat/long so you can literally use euclidian distance to estimate dispersal distance
-      J - lat/long in field dataset are in meters from the same point. double check by plotting that the points are correct for lat/long
-    c. did migrants have more potential mates?
-    J-restructure:: once moved did they have more mates in next year rather than comparing to other individuals
-      i. issue- what does this mean if yes? due to higher fitness/better genes or higher instance of encountering mates?
-    
-QUESTION: would it be better to study the migrants or their offspring in terms of genetic diversity?
-QUESTION: if using offspring, how many generations? 
+  1. Identify subpopulation mounds
+  2. Find which individuals migrated from one subpopulation to another
+  3. Compare migrant and non-migrant genomes and reproductive fitness
+  
+Questions I want to answer with these analyses
+ Are there immmediate fitness costs (offspring, mates, longevity) of moving? 
+ Do migrant genotypes lead to increased offspring fitness?
+ Do migrants disproporionately contribute to subpopulation genetic diversity (decrease inbreeding)?
 "
 
 ## open file with data
@@ -78,8 +62,10 @@ hist(sub2$moves)
 hist(sub2$moves, breaks=seq(0,4,1))
 table(sub2$moves) #shows most did not move, but there are 78 rows of data of individuals who moved. 
 #note 78 is not the actual number of individuals, as these have at least 2 capture periods
-field[field$id==1062,]#IDNUMB is the number for the ID the square brackets are subsetting row, column so all rows with this field ID
+
+#IDNUMB is the number for the ID the square brackets are subsetting row, column so all rows with this field ID
 field[field$id==919,]
+field[field$id==1062,]
 field[field$id==1635,]
 field[field$id==1907,]
 sub2[sub2$id==1907,]
@@ -88,22 +74,30 @@ sub2[sub2$id==4072,]
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-OUT = migrant = NULL #these are creating varilables and setting them to null. take the out variable and add to it at every iteration of the loop. rbind takes what is in out already, add with writeout, and rbind adds another rowm, cbind adds column. so sum and restart loop cuz at the end. null creates variables with nothing in it
+OUT = migrant = NULL #these are creating variables and setting them to null. 
+#takes the variable and adds to it at every iteration of the loop. 
 indvs = unique(sub2$id)
 for(i in 1:length(indvs)){ #iterate 1 to the length of the number of indv in the list
-  t = sub2[sub2$id==as.numeric(as.character(indvs[i])),,drop=F] #t is temperatry (convention). a subset of the datafram I am iterating over. so pull out all of rows in field data with thei [articular indiv caputered]. easier to have ind as numeric rather than character. the drop=F is critical. if you subset a datafra,e in R and teh result is just 1 row, R will conver to a list. if you add drop=FALSE, treate as a one row datafra,/one row matrix
-  if(length(t$terr[t$moves==1])>0){ #looking within t, when offspring =1. if a baby at the time, 1 is yes. if adult, offpring=0. find any rows where temperatry t, where it was captured as offpring, and if it is there, save as "natal". and saving the name of teh territory there. if natal=0, not caputred at reproductive age.
-    migrant = length(as.character(t$terr[t$moves==1]))
+  t = sub2[sub2$id==as.numeric(as.character(indvs[i])),,drop=F] #t is temporary and is lost at the end of the function
+  #defines a subset of the dataframe I am iterating over.
+  #in this case, it pulls out all rows for each individual.
+  #the drop=F is critical to make sure R treats as a matrix rather than one long list.
+  if(length(t$terr[t$moves==1])>0){ #looking within t, finds when moves = 1
+    migrant = length(as.character(t$terr[t$moves==1])) #prints number of rows of migrants
   }else(
     migrant=0
   )
-  nmig = nrow(t[t$moves==1,,drop=F]) #find all rows when they were adults. therefore this is the number of captured as adult
-  nsubpops = length(unique(t$subpop[t$moves==1])) ##how many territories as an adult (offspring=0) and look at how many unique, what is the length. so how many mounds did the indv occupt as adult
-  writeout = c(indvs[i], migrant, nmig, nsubpops) #this is the info to put in new datafra,e. concatenated into a list and addd writeout to end of the out variable
+  nmig = nrow(t[t$moves==1,,drop=F]) #find the number of times captured as adult
+  nsubpops = length(unique(t$subpop[t$moves==1])) ##how many subpopulations did the indv occupy as an adult
+  writeout = c(indvs[i], migrant, nmig, nsubpops) #this is the info to put in the new dataframe. 
   OUT = rbind(OUT, writeout)
+  #rbind takes what is in out already, add with writeout
 }
-rownames(OUT) = seq(1,nrow(OUT),1) #change row names of out to consecutibe numbers in the sequence. if in huge matrix, more convenient as dataframe, so taking column and putting in name that is understandable later
+rownames(OUT) = seq(1,nrow(OUT),1) 
+#change row names of OUT to consecutive numbers in the sequence. 
+#if in huge matrix, more convenient as dataframe, so taking column and putting in a header that is more understandable later
 MIG = data.frame(id=as.numeric(as.character(OUT[,1])), migrant=as.character(OUT[,2]), nmig=as.numeric(as.character(OUT[,3])), nsubpops=as.numeric(as.character(OUT[,4])))
+
 #"nmig" is the number of captures and "nsubpops" is correct, but only when moves=0. So all the migrants where moves > 0, nmig and nsubpops =0.
 
 table(MIG$nmig)
@@ -122,23 +116,23 @@ table(MIG$migrant)
 #nsubpops is the number of subpopulations a migrant inhabited
 #~+~+~+~+~+~~++~+~+~+~+~++~+~+~+~+~+~+~+~++~+~+~+~+~+~+~+~+~+~+~++~+~+~+~+~+~++~+~+~+~
 
-OUT = migrant = nyrs = ncap = ck = nsubpops = NULL #these are creating varilables and setting them to null. take the out variable and add to it at every iteration of the loop. rbind takes what is in out already, add with writeout, and rbind adds another rowm, cbind adds column. so sum and restart loop cuz at the end. null creates variables with nothing in it
+OUT = migrant = nyrs = ncap = ck = nsubpops = NULL 
 indvs = unique(sub2$id)
-for(i in 1:length(indvs)){ #iterate 1 to the length of the number of indv in the list
-  t = sub2[sub2$id==as.numeric(as.character(indvs[i])),,drop=F] #t is temperatry (convention). a subset of the datafram I am iterating over. so pull out all of rows in field data with thei [articular indiv caputered]. easier to have ind as numeric rather than character. the drop=F is critical. if you subset a datafra,e in R and teh result is just 1 row, R will conver to a list. if you add drop=FALSE, treate as a one row datafra,/one row matrix
-  if(length(t$terr[t$moves==1])>0){ #looking within t, when offspring =1. if a baby at the time, 1 is yes. if adult, offpring=0. find any rows where temperatry t, where it was captured as offpring, and if it is there, save as "natal". and saving the name of teh territory there. if natal=0, not caputred at reproductive age.
+for(i in 1:length(indvs)){ 
+  t = sub2[sub2$id==as.numeric(as.character(indvs[i])),,drop=F] 
+  if(length(t$terr[t$moves==1])>0){ 
     migrant = length(as.character(t$terr[t$moves==1]))
   }else(
     migrant=0
   )
-  ncap = nrow(t[t$moves==0,,drop=F]) #find number of captures for nonmigrants
-  ck = length(unique(t$subpop[t$moves==0]))
-  nyrs = nrow(t[t$moves==1,,drop=F]) #find all rows when they were adults. therefore this is the number of captured as adult
-  nsubpops = length(unique(t$subpop[t$moves==1])) ##how many territories as an adult (offspring=0) and look at how many unique, what is the length. so how many mounds did the indv occupt as adult
-  writeout = c(indvs[i], migrant, nyrs, nsubpops, ncap, ck) #this is the info to put in new datafra,e. concatenated into a list and addd writeout to end of the out variable
+  ncap = nrow(t[t$moves==0,,drop=F]) #find number of captures for non-migrants
+  ck = length(unique(t$subpop[t$moves==0])) #another check to make sure migrants and non-migrants are classified correctly
+  nyrs = nrow(t[t$moves==1,,drop=F]) #number of years captured for migrants
+  nsubpops = length(unique(t$subpop[t$moves==1])) #number of subpops for migrants
+  writeout = c(indvs[i], migrant, nyrs, nsubpops, ncap, ck) 
   OUT = rbind(OUT, writeout)
 }
-rownames(OUT) = seq(1,nrow(OUT),1) #change row names of out to consecutibe numbers in the sequence. if in huge matrix, more convenient as dataframe, so taking column and putting in name that is understandable later
+rownames(OUT) = seq(1,nrow(OUT),1) 
 ALL = data.frame(id=as.numeric(as.character(OUT[,1])), migrant=as.character(OUT[,2]), nyrs=as.numeric(as.character(OUT[,3])), nsubpops=as.numeric(as.character(OUT[,4])), ncap=as.numeric(as.character(OUT[,5])), ck=as.numeric(as.character(OUT[,6])))
 
 table(ALL$nsubpops)
@@ -148,7 +142,7 @@ table(ALL$ck)
 table(ALL$nyrs)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
 ##################################################################################3
-#just some messin around with the data
+#just some messin' around with the data using a random effects models
 
 #note: syntax is (dependent ~ independent, data)
 
@@ -163,8 +157,7 @@ summary(mate)
 "what is the relationship between migration and kinship?"
 kins <- lm(pkins ~ moves, data = sub2)
 summary(kins)
-plot(kins)
-hist(kins)
+
 
 kins <- lm(moves ~ (pkins | id) + sex, data = sub2)
 summary(kins)
@@ -180,9 +173,8 @@ summary(aov(pkins~moves,sub2))
 
 shapiro.test(residuals(lm(pkins~moves,sub2))) #checks to see if data are normal
 bartlett.test(pkins~moves,sub2) #checks to see if variances are equal
-summary(aov(pkins~moves,sub2))
-TukeyHSD(aov(pkins~moves,sub2))
-hist(pkins~moves,sub2)
+summary(aov(pkins~moves,sub2)) #runs an ANOVA
+
 
 library(lme4)
 library(lmerTest)
