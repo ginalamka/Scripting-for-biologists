@@ -98,7 +98,7 @@ rownames(OUT) = seq(1,nrow(OUT),1)
 #if in huge matrix, more convenient as dataframe, so taking column and putting in a header that is more understandable later
 MIG = data.frame(id=as.numeric(as.character(OUT[,1])), migrant=as.character(OUT[,2]), nmig=as.numeric(as.character(OUT[,3])), nsubpops=as.numeric(as.character(OUT[,4])))
 
-#"nmig" is the number of captures and "nsubpops" is correct, but only when moves=0. So all the migrants where moves > 0, nmig and nsubpops =0.
+#"nmig" is the number of captures and "nsubpops" is correct, but only when moves>0. So all the migrants where moves = 0, nmig and nsubpops =0.
 
 table(MIG$nmig)
 table(MIG$nsubpops)
